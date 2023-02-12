@@ -15,7 +15,7 @@ ______________________________________________________________________
 
 ## Preparation
 Our codebase require Python ≥ 3.9. 
-It requires a [modified version of MineDojo](https://github.com/CraftJarvis/MC-Simulator) as the simulator and [MineCLIP](https://github.com/MineDojo/MineCLIP) as the goal text encoder. 
+It also requires a [modified version of MineDojo](https://github.com/CraftJarvis/MC-Simulator) as the simulator and [MineCLIP](https://github.com/MineDojo/MineCLIP) as the goal text encoder. 
 Please run the following commands to prepare the environments. 
 ```sh
 conda create -n controller python=3.9 
