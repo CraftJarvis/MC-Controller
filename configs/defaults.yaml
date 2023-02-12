@@ -1,0 +1,57 @@
+defaults:
+  - _self_
+  - data: multi_plains
+  - eval: multi_plains
+  - model: simple
+
+eval:
+  only: False
+  num_workers: 2
+  max_ep_len: 3000
+  goal_ratio: 5
+  freq: 1
+  fps: 1000
+
+data:
+  skip_frame: 5
+  window_len: 10
+  padding_pos: left
+  per_data_filters: null
+  
+model:
+  model_path: ${hydra:runtime.cwd}/models/models/1x.model
+  weight_path: ''
+
+pretrains:
+  clip_path: ${hydra:runtime.cwd}/models/weights/attn.pth
+
+loss:
+  action_loss: 
+    fn: action_loss
+    weight: 1.0
+    enable: True
+  horizon_loss:
+    fn: horizon_loss
+    weight: 1.0
+    enable: True
+
+optimize:
+  parallel: False
+  gamma: 1.0
+  batch_size: 32
+  num_workers: 8
+  max_iters: 1000
+  learning_rate: 0.0001
+  backbone_ratio: 1.0
+  weight_decay: 0.0001
+  warmup_steps: 10000
+  aug_ratio: 10000
+  
+record:
+  ckpt_freq: 2
+  log_to_wandb: False
+  dir: ${hydra:runtime.cwd}/recordings
+  frames: False
+
+simulator:
+  resolution: [640, 480]

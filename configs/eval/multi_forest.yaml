@@ -1,0 +1,35 @@
+only: False
+fps: 1000
+max_ep_len: 600
+horizon: 20
+freq: 5
+goal_ratio: 5
+
+envs: 
+  - 'MineDoJoPlainsAnimalsAndLogs-v2'
+  - 'MineDoJoFlatAnimals-v1'
+  - 'NewMineDoJoFlowerForest-v1'
+  - 'NewMineDoJoFlowerForest-v2'
+
+goals:
+  - 'dirt'
+  - 'Oak Wood'
+  - 'Oak Sapling'
+  - 'Oak Leaves'
+  - 'Birch Wood'
+  - 'Birch Leaves'
+  - 'Grass'
+  - 'cow'
+  - 'pig'
+  - 'sheep'
+  - 'Orange Tulip'
+  - 'Red Tulip'
+  - 'White Tulip'
+  - 'Peony'
+  - 'Azure Bluet'
+  - 'Allium'
+  - 'Poppy'
+  - 'Rose Bush'
+  - 'Lilac'
+
+env_id:  [2, 2, 2, 3, 2, 3, 3, 2, 2, 2,  2,  2,  2,  2,  2,  2,  2,  2,  2]

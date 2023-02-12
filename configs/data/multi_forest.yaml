@@ -1,0 +1,22 @@
+filters:
+  - 'dirt'
+  - 'Oak Wood'
+  - 'Oak Sapling'
+  - 'Oak Leaves'
+  - 'Birch Wood'
+  - 'Birch Leaves'
+  - 'Grass'
+  - 'cow'
+  - 'pig'
+  - 'sheep'
+  - 'Orange Tulip'
+  - 'Red Tulip'
+  - 'White Tulip'
+  - 'Peony'
+  - 'Azure Bluet'
+  - 'Allium'
+  - 'Poppy'
+  - 'Rose Bush'
+  - 'Lilac'
+train_data: 
+  - ${hydra:runtime.cwd}/dataset/forest_lmdb

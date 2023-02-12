@@ -1,0 +1,20 @@
+only: False
+fps: 1000
+max_ep_len: 600
+horizon: 20
+freq: 1
+goal_ratio: 5
+
+envs: 
+  - 'MineDoJoPlainsAnimalsAndLogs-v2'
+
+goals: 
+  - 'log'
+  - 'cow'
+  - 'sheep'
+  - 'pig'
+env_id:
+  - 0
+  - 0
+  - 0
+  - 0

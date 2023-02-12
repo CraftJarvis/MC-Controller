@@ -1,0 +1,9 @@
+train_data: 
+  - ${hydra:runtime.cwd}/dataset/plains_lmdb
+
+filters: 
+  - log
+  - sheep
+  - cow
+  - pig
+

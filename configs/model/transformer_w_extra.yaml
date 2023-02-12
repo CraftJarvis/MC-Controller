@@ -1,0 +1,33 @@
+name: simple
+fusion_type: concat
+state_dim: 1024
+goal_dim: 512
+symbol_dim: 2
+action_dim: 8
+embed_dim: 1024
+max_ep_len: 1000
+
+backbone_name: goal_impala_1x
+frozen_cnn: False
+only_load_cnn: False
+load_ckpt_path: ''
+
+use_horizon: True
+use_extra_obs: True
+use_prev_action: True
+use_recurrent: 'transformer'
+use_pred_horizon: True
+
+c: 10
+
+extra_obs_cfg:
+  biome_hiddim: 256
+  compass_hiddim: 256
+  gps_hiddim: 256
+  voxels_hiddim: 256
+transformer_cfg:
+  n_layer: 6
+  n_head: 4
+  resid_pdrop: 0.1
+  attn_pdrop: 0.1
+  activation_function: 'relu'

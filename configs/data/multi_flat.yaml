@@ -1,0 +1,14 @@
+train_data: 
+  - ${hydra:runtime.cwd}/dataset/flat_lmdb
+
+
+filters:
+  - 'sheep'
+  - 'cow'
+  - 'pig'
+  - 'spider'
+  - 'polar_bear'
+  - 'chicken'
+  - 'horse'
+  - 'llama'
+  - 'mushroom_cow'

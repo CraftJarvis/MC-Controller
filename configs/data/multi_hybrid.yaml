@@ -1,0 +1,32 @@
+filters:
+  - 'log'
+  - 'cow'
+  - 'pig'
+  - 'sheep'
+  - 'spider'
+  - 'polar_bear'
+  - 'chicken'
+  - 'horse'
+  - 'llama'
+  - 'mushroom_cow'
+  - 'dirt'
+  - 'Oak Wood'
+  - 'Oak Sapling'
+  - 'Oak Leaves'
+  - 'Birch Wood'
+  - 'Birch Leaves'
+  - 'Grass'
+  - 'Orange Tulip'
+  - 'Red Tulip'
+  - 'White Tulip'
+  - 'Peony'
+  - 'Azure Bluet'
+  - 'Allium'
+  - 'Poppy'
+  - 'Rose Bush'
+  - 'Lilac'
+  - 'stone'
+train_data: 
+  - ${hydra:runtime.cwd}/dataset/forest_lmdb
+  - ${hydra:runtime.cwd}/dataset/flat_lmdb
+  - ${hydra:runtime.cwd}/dataset/plains_lmdb
