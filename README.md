@@ -46,8 +46,7 @@ python main.py eval=multi_plains eval.only=True model.load_ckpt_path=<path/to/ck
 ```
 After loading, you should see som windows where agents are playing Minecraft. 
 
-<img src="imgs/window1.png" width="200" />
-<img src="imgs/window2.png" width="200" />
+<img src="imgs/window1.png" width="200" /><img src="imgs/window2.png" width="200" />
 
 ## Model checkpoints
 Below are the configures and weights of models. 
