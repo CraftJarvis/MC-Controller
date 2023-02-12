@@ -31,7 +31,7 @@ python -m pip install git+https://github.com/CraftJarvis/MC-Simulator.git
 |Flat| 553GB | to be uploaded |
 |Forests | 215GB | to be uploaded |
 
-## Train Agent
+## Train agent
 Run the following commands to train the agent. 
 ```sh
 python main.py data=multi_plains eval=multi_plains
