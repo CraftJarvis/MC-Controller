@@ -9,8 +9,6 @@
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/MineDojo)](https://pypi.org/project/MineDojo/)
 [<img src="https://img.shields.io/badge/Framework-PyTorch-red.svg"/>](https://pytorch.org/)
 [![GitHub license](https://img.shields.io/github/license/MineDojo/MineCLIP)](https://github.com/MineDojo/MineCLIP/blob/main/license)
-______________________________________________________________________
-![](images/pull_figure.png)
 </div>
 
 ## Preparation
@@ -33,7 +31,7 @@ python -m pip install git+https://github.com/CraftJarvis/MC-Simulator.git
 |Flat| 553GB | to be uploaded |
 |Forests | 215GB | to be uploaded |
 
-## Train Agent
+## Train agent
 Run the following commands to train the agent. 
 ```sh
 python main.py data=multi_plains eval=multi_plains

@@ -14,7 +14,7 @@ eval:
 
 data:
   skip_frame: 5
-  window_len: 10
+  window_len: 16
   padding_pos: left
   per_data_filters: null
   
