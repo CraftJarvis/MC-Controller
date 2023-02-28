@@ -51,7 +51,7 @@ Below are the configures and weights of models.
 |Configure|Download| Biome| Number of goals|
 |---|---|---|---|
 |Transformer | here | Plains | 4 |
-|Transformer + Extra Observation| [here](https://k00.fr/zx0liyzq) | Plains | 4 |
+|Transformer + Extra Observation| [here](https://pkueducn-my.sharepoint.com/:f:/g/personal/zhwang_stu_pku_edu_cn/Ev7WGWHL5PpCjMKil0dYrOUBEwfc-y9gM7EPtsQqqp5d0A?e=UdB5gf) | Plains | 4 |
 
 For example, if we want to use the "Transformer+Extra Observation" checkpoint, we should specify `model=transformer_w_extra` in the command. 
 ```sh
