@@ -8,7 +8,7 @@ from datetime import datetime
 from copy import deepcopy
 from functools import partial
 from ray.rllib.models.torch.torch_action_dist import TorchMultiCategorical
-from ray.rllib.env.wrappers.minedojo_wrapper import MineDojoEnv
+from minedojo.minedojo_wrapper import MineDojoEnv
 from src.utils.vision import resize_image
 from src.eval.eval_worker import EnvWorker
 from src.utils.foundation import discrete_horizon

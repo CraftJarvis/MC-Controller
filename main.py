@@ -27,7 +27,7 @@ from rich import print
 from tqdm import tqdm
 from functools import partial
 from ray.rllib.models.torch.torch_action_dist import TorchMultiCategorical
-from ray.rllib.env.wrappers.minedojo_wrapper import MineDojoEnv
+from minedojo.minedojo_wrapper import MineDojoEnv
 from src.models.simple import SimpleNetwork
 from src.utils import negtive_sample, EvalMetric
 from src.utils.vision import create_backbone, resize_image
@@ -133,6 +133,7 @@ class Trainer:
                 c=cfg['model']['c'],
                 transformer_cfg=cfg['model']['transformer_cfg']
             )
+            torch.save(self.model, "save_model.pt")
         else:
             raise NotImplementedError
         
