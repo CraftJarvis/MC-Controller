@@ -191,7 +191,10 @@ class ParallelEval:
                         states=temp_states, 
                         horizons=per_worker_horizons[worker_id][rg], 
                     )
-                    per_worker_pred_horizons[worker_id].append(mid_info['pred_horizons'].argmax(-1)[0, -1].item())
+                    try:
+                        per_worker_pred_horizons[worker_id].append(mid_info['pred_horizons'].argmax(-1)[0, -1].item())
+                    except:
+                        pass
                 else:
                     raise NotImplementedError()
 
@@ -234,16 +237,19 @@ class ParallelEval:
                     for id, frame in enumerate(per_worker_obs[worker_id]):
                         frame = resize_image_numpy(frame).astype('uint8')
                         # import ipdb; ipdb.set_trace()
-                        horizon_text = per_worker_pred_horizons[worker_id][id]
-                        cv2.putText(
-                            frame,
-                            f"H: {horizon_text}, T: {id}",
-                            (10, 25),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.5,
-                            (255, 255, 255),
-                            2,
-                        )
+                        try:
+                            horizon_text = per_worker_pred_horizons[worker_id][id]
+                            cv2.putText(
+                                frame,
+                                f"H: {horizon_text}, T: {id}",
+                                (10, 25),
+                                cv2.FONT_HERSHEY_SIMPLEX,
+                                0.5,
+                                (255, 255, 255),
+                                2,
+                            )
+                        except:
+                            pass
                         imgs.append(Image.fromarray(frame))
                     # imgs = [Image.fromarray(resize_image_numpy(img).astype('uint8')) for img in per_worker_obs[worker_id]]
                     imgs = imgs[::3]

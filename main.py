@@ -35,6 +35,8 @@ from src.utils.loss import get_loss_fn
 from src.data.data_lmdb import LMDBTrajectoryDataset
 from src.eval.parallel_eval import ParallelEval
 
+torch.set_float32_matmul_precision('high')
+
 torch.backends.cudnn.benchmark = True
 
 def making_exp_name(cfg):
@@ -52,7 +54,7 @@ def making_exp_name(cfg):
     
     return "@".join(component)
 
-from ray.rllib.models.torch.mineclip_lib.mineclip_model import MineCLIP
+from mineclip.mineclip.mineclip import MineCLIP
 def accquire_goal_embeddings(clip_path, goal_list, device="cuda"):
     clip_cfg = {'arch': 'vit_base_p16_fz.v2.t2', 'hidden_dim': 512, 'image_feature_dim': 512, 'mlp_adapter_spec': 'v0-2.t0', 
                'pool_type': 'attn.d2.nh8.glusw', 'resolution': [160, 256]}
@@ -113,7 +115,7 @@ class Trainer:
         )
         
         if cfg['model']['name'] == 'simple':
-            self.model = SimpleNetwork(
+            self.model = torch.compile(SimpleNetwork(
                 action_space=self.action_space,
                 state_dim=cfg['model']['state_dim'],
                 goal_dim=cfg['model']['goal_dim'],
@@ -132,8 +134,8 @@ class Trainer:
                 use_pred_horizon=cfg['model']['use_pred_horizon'],
                 c=cfg['model']['c'],
                 transformer_cfg=cfg['model']['transformer_cfg']
-            )
-            torch.save(self.model, "save_model.pt")
+            ))
+            # torch.save(self.model, "save_model.pt")
         else:
             raise NotImplementedError
         
