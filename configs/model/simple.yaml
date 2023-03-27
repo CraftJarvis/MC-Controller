@@ -5,6 +5,7 @@ goal_dim: 512
 symbol_dim: 2
 action_dim: 8
 embed_dim: 1024
+# embed_dim: 512
 max_ep_len: 1000
 
 backbone_name: goal_impala_1x
@@ -15,7 +16,8 @@ load_ckpt_path: ''
 use_horizon: True
 use_extra_obs: True
 use_prev_action: True
-use_recurrent: 'transformer'
+# use_recurrent: 'transformer'
+use_recurrent: 'flash_attention'
 use_pred_horizon: True
 
 c: 10
@@ -27,7 +29,13 @@ extra_obs_cfg:
   voxels_hiddim: 256
 transformer_cfg:
   n_layer: 6
-  n_head: 4
+  # n_head: 4
+  n_head: 16
   resid_pdrop: 0.1
   attn_pdrop: 0.1
   activation_function: 'relu'
+
+# HJ
+compile: False
+# compile: True
+

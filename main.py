@@ -34,10 +34,13 @@ from src.utils.vision import create_backbone, resize_image
 from src.utils.loss import get_loss_fn
 from src.data.data_lmdb import LMDBTrajectoryDataset
 from src.eval.parallel_eval import ParallelEval
-
 torch.set_float32_matmul_precision('high')
 
+import torch._dynamo
 torch.backends.cudnn.benchmark = True
+torch._dynamo.config.suppress_errors = True
+
+from src.utils.calculate_overhead import *
 
 def making_exp_name(cfg):
     component = []
@@ -94,7 +97,9 @@ class Trainer:
                 padding_pos=cfg['data']['padding_pos'],
             )
         
-            if self.cfg.optimize.parallel:
+            # if self.cfg.optimize.parallel:
+            # HJ
+            if self.cfg['optimize']['parallel']:
                 self.train_sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
             else:
                 self.train_sampler = torch.utils.data.sampler.RandomSampler(self.train_dataset)
@@ -115,26 +120,48 @@ class Trainer:
         )
         
         if cfg['model']['name'] == 'simple':
-            self.model = torch.compile(SimpleNetwork(
-                action_space=self.action_space,
-                state_dim=cfg['model']['state_dim'],
-                goal_dim=cfg['model']['goal_dim'],
-                action_dim=cfg['model']['action_dim'],
-                num_cat=len(cfg['data']['filters']),
-                hidden_size=cfg['model']['embed_dim'],
-                fusion_type=cfg['model']['fusion_type'],
-                max_ep_len=cfg['model']['max_ep_len'],
-                backbone=backbone,
-                frozen_cnn=cfg['model']['frozen_cnn'],
-                use_recurrent=cfg['model']['use_recurrent'],
-                use_extra_obs=cfg['model']['use_extra_obs'],
-                use_horizon=cfg['model']['use_horizon'],
-                use_prev_action=cfg['model']['use_prev_action'],
-                extra_obs_cfg=cfg['model']['extra_obs_cfg'],
-                use_pred_horizon=cfg['model']['use_pred_horizon'],
-                c=cfg['model']['c'],
-                transformer_cfg=cfg['model']['transformer_cfg']
-            ))
+            if cfg['model']['compile']:
+                self.model = torch.compile(SimpleNetwork(
+                    action_space=self.action_space,
+                    state_dim=cfg['model']['state_dim'],
+                    goal_dim=cfg['model']['goal_dim'],
+                    action_dim=cfg['model']['action_dim'],
+                    num_cat=len(cfg['data']['filters']),
+                    hidden_size=cfg['model']['embed_dim'],
+                    fusion_type=cfg['model']['fusion_type'],
+                    max_ep_len=cfg['model']['max_ep_len'],
+                    backbone=backbone,
+                    frozen_cnn=cfg['model']['frozen_cnn'],
+                    use_recurrent=cfg['model']['use_recurrent'],
+                    use_extra_obs=cfg['model']['use_extra_obs'],
+                    use_horizon=cfg['model']['use_horizon'],
+                    use_prev_action=cfg['model']['use_prev_action'],
+                    extra_obs_cfg=cfg['model']['extra_obs_cfg'],
+                    use_pred_horizon=cfg['model']['use_pred_horizon'],
+                    c=cfg['model']['c'],
+                    transformer_cfg=cfg['model']['transformer_cfg']
+                ))
+            else:
+                self.model = SimpleNetwork(
+                    action_space=self.action_space,
+                    state_dim=cfg['model']['state_dim'],
+                    goal_dim=cfg['model']['goal_dim'],
+                    action_dim=cfg['model']['action_dim'],
+                    num_cat=len(cfg['data']['filters']),
+                    hidden_size=cfg['model']['embed_dim'],
+                    fusion_type=cfg['model']['fusion_type'],
+                    max_ep_len=cfg['model']['max_ep_len'],
+                    backbone=backbone,
+                    frozen_cnn=cfg['model']['frozen_cnn'],
+                    use_recurrent=cfg['model']['use_recurrent'],
+                    use_extra_obs=cfg['model']['use_extra_obs'],
+                    use_horizon=cfg['model']['use_horizon'],
+                    use_prev_action=cfg['model']['use_prev_action'],
+                    extra_obs_cfg=cfg['model']['extra_obs_cfg'],
+                    use_pred_horizon=cfg['model']['use_pred_horizon'],
+                    c=cfg['model']['c'],
+                    transformer_cfg=cfg['model']['transformer_cfg']
+                )
             # torch.save(self.model, "save_model.pt")
         else:
             raise NotImplementedError
@@ -156,7 +183,9 @@ class Trainer:
                 self.iter_num = state_dict['iter_num']
         
         self.model = self.model.to(self.device)
-        if self.cfg.optimize.parallel:
+        # HJ
+        # if self.cfg.optimize.parallel:
+        if self.cfg['optimize']['parallel']:
             self.model = torch.nn.parallel.DistributedDataParallel(
                 self.model, 
                 device_ids=[self.local_rank], 
@@ -256,12 +285,15 @@ class Trainer:
         else:
             self.start_time = time.time()
             for iter_num in range(self.iter_num+1, self.cfg['optimize']['max_iters']):
-                if self.cfg.optimize.parallel:
+                # if self.cfg.optimize.parallel:
+                # HJ
+                if self.cfg['optimize']['parallel']:
                     dist.barrier()
                     self.train_loader.sampler.set_epoch(iter_num)
                 train_losses = self.train_iteration(iter_num=iter_num+1)
-                
-                if self.cfg.optimize.parallel:
+                # if self.cfg.optimize.parallel:
+                # HJ
+                if self.cfg['optimize']['parallel']:
                     if dist.get_rank() != 0:
                         continue
                 
@@ -272,8 +304,11 @@ class Trainer:
                         'model_state_dict': state_dict,
                         'loss': np.mean(train_losses['loss']),
                     }, f"ckpts/ckpt_{iter_num}.pt")
-                
+                    
+                # gpu_mem_overhead = check_gpu_mem_usedRate()
+                # self.log_metrics(iter_num, train_losses, print_logs=True, gpu_mem_overhead=gpu_mem_overhead)
                 self.log_metrics(iter_num, train_losses, print_logs=True)
+                # sys.exit(0)
                 if (iter_num + 1) % self.cfg['eval']['freq'] == 0:
                     self.eval_metric.reset()
                     gnames, eval_results = self.parallel_eval.step(iter_num, self.inp_goals)
@@ -290,6 +325,7 @@ class Trainer:
                                 f'goal/horizon/{_goal_name}': _metric['hor'],
                                 f'goal/success/{_goal_name}': _metric['success'],
                             }, step=iter_num)
+                        
                     if self.cfg['record']['log_to_wandb']:
                         wandb.log({
                             f'goal/mean-precision': sum(m['precision'] for m in metric_result.values()) / len(metric_result),
@@ -313,12 +349,14 @@ class Trainer:
         
         return train_losses
     
-    def log_metrics(self, iter_num, train_losses, print_logs=False):
+    def log_metrics(self, iter_num, train_losses, print_logs=False, gpu_mem_overhead=0):
         
         logs = {}
         for key, loss_list in train_losses.items():
             logs[f'training/{key}_mean'] = np.mean(loss_list).item()
             logs[f'training/{key}_std'] = np.std(loss_list).item()
+        # HJ
+        logs['gpu_mem_overhead']=gpu_mem_overhead
 
         if print_logs:
             print('=' * 80)
@@ -340,14 +378,14 @@ class Trainer:
         goals, states, actions, horizons, timesteps, attention_mask = data
         for k, v in states.items():
             states[k] = v.to(self.device)
-        goals = goals.to(self.device)
-        actions = actions.to(self.device)
-        horizons = horizons.to(self.device)
-        timesteps = timesteps.to(self.device) #! timesteps is deperacated
-        attention_mask = attention_mask.to(self.device)
+        goals = goals.to(self.device) # HJ [batch_size, window_len, goal_dim]
+        actions = actions.to(self.device) # HJ [batch_size, window_len, action_dim]
+        horizons = horizons.to(self.device) # HJ [batch_size, window_len]
+        timesteps = timesteps.to(self.device) #! timesteps is deperacated HJ [batch_size, window_len]
+        attention_mask = attention_mask.to(self.device) # HJ [batch_size, window_len]
         
         if self.cfg['model']['name'] == 'simple':
-            action_preds, mid_info = self.model(goals, states, horizons, timesteps, attention_mask)
+            action_preds, mid_info = self.model(goals, states, horizons, timesteps, attention_mask) # HJ action_preds.shape=torch.Size([batch_size, window_len, 42?]), mid_info['pred_horizons'].shape=torch.Size([batch_size, window_len, 16(mlp_output_dim)])
             state_preds = None
             horizon_preds = None
             goal_preds = None
@@ -395,7 +433,8 @@ def main(cfg):
         torch.distributed.init_process_group(backend='nccl')
     else:
         local_rank = 0
-        
+
+
     torch.cuda.set_device(local_rank)
     device = torch.device("cuda", local_rank)
     
@@ -411,3 +450,5 @@ def main(cfg):
 if __name__ == "__main__":
     main()
     
+
+

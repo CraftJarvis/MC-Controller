@@ -56,7 +56,9 @@ class CnnBasicBlock(nn.Module):
     def forward(self, x, goal_embeddings):
         px = self.conv1(self.conv0(x))
         gate = self.goal_gate(goal_embeddings)
-        # print(gate.shape, px.shape)
+        # print(gate.shape, px.shape) 
+        # import sys
+        # sys.exit(0)
         r = x + px * gate.sigmoid().unsqueeze(2).unsqueeze(3)
         return r
 

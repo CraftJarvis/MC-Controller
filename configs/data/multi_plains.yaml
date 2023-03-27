@@ -1,5 +1,6 @@
 train_data: 
-  - ${hydra:runtime.cwd}/dataset/plains_lmdb
+  # - ${hydra:runtime.cwd}/dataset/plains_lmdb
+  - /home/chengdong/haojun/craftjavis/MC-Controller/dataset/plains_lmdb
 
 filters: 
   - log

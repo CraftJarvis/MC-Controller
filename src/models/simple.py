@@ -7,7 +7,9 @@ from rich import print
 from src.utils.mlp import build_mlp
 from src.utils.foundation import ExtraObsEmbedding, PrevActionEmbedding, Bilinear, FiLM, Concat
 
-
+# HJ
+from src.models.gpt import GPTLMHeadModel
+# from src.models.gpt_o import GPTLMHeadModel
 class SimpleNetwork(nn.Module):
     
     def __init__(
@@ -123,6 +125,26 @@ class SimpleNetwork(nn.Module):
                 attn_pdrop=transformer_cfg['attn_pdrop'],
             )
             self.recurrent = transformers.GPT2Model(config)
+        # HJ
+        elif self.use_recurrent == 'flash_attention':
+            self.embed_timestep = nn.Embedding(max_ep_len, hidden_size)
+            self.embed_ln = nn.LayerNorm(hidden_size)
+            transformer_cfg = kwargs['transformer_cfg']
+            config = transformers.GPT2Config(
+                vocab_size=1,  # doesn't matter -- we don't use the vocab
+                n_embd=hidden_size,
+                n_layer=transformer_cfg['n_layer'],
+                n_head=transformer_cfg['n_head'],
+                activation_function=transformer_cfg['activation_function'],
+                resid_pdrop=transformer_cfg['resid_pdrop'],
+                attn_pdrop=transformer_cfg['attn_pdrop'],
+                use_flash_attn=True, 
+                fused_mlp=True,
+                fused_bias_fc=True, 
+                # fused_dropout_add_ln=True, 
+            )
+            self.recurrent = GPTLMHeadModel(config)
+            
 
         if self.use_horizon:
             self.embed_horizon = nn.Embedding(16, hidden_size)
@@ -152,8 +174,8 @@ class SimpleNetwork(nn.Module):
         if img.shape[-1] == 3:
             img = img.permute(0, 1, 4, 2, 3)
         B, T, C, H, W = img.shape
-        img = img.view(B * T, *img.shape[2:])
-        goal_embeddings = goal_embeddings.view(B * T, *goal_embeddings.shape[2:])
+        img = img.view(B * T, *img.shape[2:]) # HJ [batch_size*window_len, C, H, W]
+        goal_embeddings = goal_embeddings.view(B * T, *goal_embeddings.shape[2:]) # HJ [batch_size*window_len, embed_dim]
         feat = self.backbone(img, goal_embeddings)
         feat = feat.view(B, T, -1)
         return feat
@@ -161,17 +183,17 @@ class SimpleNetwork(nn.Module):
     def forward(self, goals, states, horizons, timesteps=None, attention_mask=None):
 
         mid_info = {}
-        raw_rgb = states['rgb']
+        raw_rgb = states['rgb'] # [batch_size, window_len, 120, 160, 3]
         batch_size, seq_length = raw_rgb.shape[:2]
         assert self.use_recurrent or seq_length == 1 , "simple network only supports length = 1 if use_recurrent = None. "
-        goal_embeddings = self.embed_goal(goals)
-        rgb_embeddings = self.embed_rgb(self._img_feature(raw_rgb, goal_embeddings))
+        goal_embeddings = self.embed_goal(goals) # HJ [batch_size, window_len, embed_dim]
+        rgb_embeddings = self.embed_rgb(self._img_feature(raw_rgb, goal_embeddings)) # HJ [batch_size, window_len, embed_dim]
         
         #! compute rgb embeddings based on goal information
         if self.fusion_type == "rgb":
             body_embeddings = rgb_embeddings
         elif self.fusion_type == "concat":
-            body_embeddings = torch.cat([rgb_embeddings, goal_embeddings], dim = -1)
+            body_embeddings = torch.cat([rgb_embeddings, goal_embeddings], dim = -1) # HJ [batch_size, window_len, embed_dim*2]
         elif self.fusion_type == "bilinear":
             body_embeddings = self.f_rgb_goal(rgb_embeddings, goal_embeddings)
         elif self.fusion_type == "film":
@@ -185,32 +207,46 @@ class SimpleNetwork(nn.Module):
         if self.use_extra_obs:
             extra_obs = states
             extra_embeddings = self.embed_extra(extra_obs)
-            body_embeddings = torch.cat([body_embeddings, extra_embeddings], dim=-1)
+            body_embeddings = torch.cat([body_embeddings, extra_embeddings], dim=-1) # HJ [batch_size, window_len, embed_dim*3]
         
         #! add prev action embeddings
         if self.use_prev_action:
-            prev_action_embeddings = self.embed_prev_action(states['prev_action'])
-            body_embeddings = torch.cat([body_embeddings, prev_action_embeddings], dim=-1)
+            prev_action_embeddings = self.embed_prev_action(states['prev_action']) 
+            body_embeddings = torch.cat([body_embeddings, prev_action_embeddings], dim=-1) # HJ [batch_size, window_len, embed_dim*4] 
         
-        obs_feature = self.concat_input(body_embeddings)
+        obs_feature = self.concat_input(body_embeddings) # HJ [batch_size, window_len, embed_dim]
 
         #! recurrent network is used to 
         if self.use_recurrent in ['gru', 'lstm']:
             obs_feature, hids = self.recurrent(obs_feature)
         elif self.use_recurrent in ['transformer']:
-            time_embeddings = self.embed_timestep(timesteps)
-            inputs_embeds = obs_feature + time_embeddings
+            time_embeddings = self.embed_timestep(timesteps) # HJ [batch_size, window_len, embed_dim]
+            inputs_embeds = obs_feature + time_embeddings # HJ [batch_size, window_len, embed_dim]
             # inputs_embeds = self.embed_ln(obs_feature + time_embeddings)
             transformer_outputs = self.recurrent(
                 inputs_embeds=inputs_embeds,
                 attention_mask=attention_mask,
             )
             obs_feature = transformer_outputs['last_hidden_state']
+        # HJ
+        elif self.use_recurrent in ['flash_attention']:
+            time_embeddings = self.embed_timestep(timesteps) # HJ [batch_size, window_len, embed_dim]
+            inputs_embeds = obs_feature + time_embeddings # HJ [batch_size, window_len, embed_dim]
+            # inputs_embeds = inputs_embeds.half()
+            # attention_mask = attention_mask.half()
+            transformer_outputs = self.recurrent(
+                input_ids=inputs_embeds,
+                inputs_embeds=inputs_embeds,
+                attention_mask=attention_mask,
+                only_return_hidden_states=True,
+            )
+            obs_feature = transformer_outputs.float()
 
+        # print(f"{self.use_recurrent}, {obs_feature.shape}")
         #! add horizon embeddings
         if self.use_horizon:
             if self.use_pred_horizon:
-                pred_horizons = self.pred_horizon(obs_feature)
+                pred_horizons = self.pred_horizon(obs_feature) # HJ [batch_size, window_len, 16(mlp_output_dim)]
                 mid_info['pred_horizons'] = pred_horizons
                 if not self.training:
                     mid_horizons = pred_horizons.argmax(-1)
@@ -219,8 +255,8 @@ class SimpleNetwork(nn.Module):
                     mid_horizons = horizons
             else:
                 mid_horizons = horizons
-            horizon_embeddings = self.embed_horizon(mid_horizons)
-            mid_feature = self.fuse_horizon(obs_feature, horizon_embeddings)
+            horizon_embeddings = self.embed_horizon(mid_horizons) # HJ [batch_size, window_len, embed_dim]
+            mid_feature = self.fuse_horizon(obs_feature, horizon_embeddings) # HJ [batch_size, window_len, embed_dim]
         else:
             mid_feature = obs_feature
         

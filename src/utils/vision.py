@@ -208,7 +208,7 @@ class GoalImpalaCNNWrapper(nn.Module):
         img: BxT, 3, H, W, without normalization
         goal_embeddings: BxT, C
         '''
-        img = resize_image(img, (128, 128))
+        img = resize_image(img, (128, 128)) # HJ [batch_size*window_len, 3, 128, 128]
         img = img.to(dtype=torch.float32) / 255.
         return self.linear(self.cnn(img, goal_embeddings))
 

@@ -14,7 +14,8 @@ eval:
 
 data:
   skip_frame: 5
-  window_len: 16
+  # window_len: 16
+  window_len: 64
   padding_pos: left
   per_data_filters: null
   
@@ -38,7 +39,8 @@ loss:
 optimize:
   parallel: False
   gamma: 1.0
-  batch_size: 32
+  batch_size: 16
+  # batch_size: 1
   num_workers: 8
   max_iters: 1000
   learning_rate: 0.0001
@@ -49,9 +51,11 @@ optimize:
   
 record:
   ckpt_freq: 2
-  log_to_wandb: False
+  log_to_wandb: True
+  # log_to_wandb: False
   dir: ${hydra:runtime.cwd}/recordings
   frames: False
 
 simulator:
   resolution: [640, 480]
+
