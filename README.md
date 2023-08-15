@@ -26,10 +26,10 @@ python -m pip install git+https://github.com/CraftJarvis/MC-Simulator.git
 
 ## Dataset
 |Biome|Size|Download|
-|---|---|---|
-|Plains| 289GB | to be uploaded |
-|Flat| 553GB | to be uploaded |
-|Forests | 215GB | to be uploaded |
+|---|---|
+|Plains| [url](https://www.aliyundrive.com/s/XVH24fiTAr9) |
+|Flat| to be uploaded |
+|Forests | to be uploaded |
 
 ## Train agent
 Run the following commands to train the agent. 
