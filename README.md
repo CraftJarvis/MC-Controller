@@ -25,7 +25,7 @@ python -m pip install git+https://github.com/CraftJarvis/MC-Simulator.git
 ```
 
 ## Dataset
-|Biome|Size|Download|
+|Biome|Download|
 |---|---|
 |Plains| [url](https://www.aliyundrive.com/s/XVH24fiTAr9) |
 |Flat| to be uploaded |
